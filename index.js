@@ -15,27 +15,42 @@ app.use(morgan('dev'));
 app.use(express.json()); // Para datos JSON
 app.use(express.static(path.join(__dirname, 'src', 'static')));
 
-
 // Configuración de la aplicación
 app.set('appName', 'Prueba  Node.js y MongoDB');
 app.set('port', 3000);
 app.set('case sensitive routing', true);
 
 
-
 //Rutas
 
-app.post('/usuarios', async (req,res) =>{
+app.post('/usuarios', async (req, res) => {
 
-    //Almacena la información
     try{
-        const nuevo_usuario = new Usuario(req.body);
-        await nuevo_usuario.save();
-        res.status(200).json('Usuario almacenado Correctamente');
-    }catch(error){
-        res.status(400).json('Error al almacenar los datos.',error);
+        const nuevo_usuario= new Usuario ({
+            nombre: req.body.nombre,
+            email: req.body.email,
+            edad: req.body.edad,
+            direcciones: [{
+                calle: req.body.calle,
+                ciudad: req.body.ciudad,
+                pais: req.body.pais,
+                codigo_postal: req.body.codigo_postal,
+            }]
+        });
+    
+        //Verificar si el correo ya existe
+        const { email } = req.body;
+        const correoExist = await Usuario.findOne({ email });
+
+        if (correoExist) {
+            return res.status(400).json('El correo ya se encuentra registrado');
+        } await nuevo_usuario.save();
+        res.status(201).json('Usuario almacenado correctamente');
+    }catch{
+        res.status(400).json({ mensaje: 'Error al almacenar los datos.', error: error.message });
     }
-})
+
+});
 
 
 app.get('/usuarios', async (req,res) => {
@@ -45,7 +60,7 @@ app.get('/usuarios', async (req,res) => {
        const query =  await Usuario.find({});
        res.send (query);
     } catch(error){
-        res.status(400).json('Usuarios no Encontrados.', error);
+        res.status(400).json({mensaje: 'Usuarios no Encontrados.', error: error.message});
     }
 })
 
@@ -87,6 +102,23 @@ app.delete('/usuarios/:id', async (req,res) =>{
         res.status(400).json({mensaje: 'Error al Eliminar el usuario', error: error.message});
     }
 })
+
+//Buscar Usuarios por una direccion
+
+app.get('/usuarios/buscar', async (req,res) =>{
+
+    try{
+        const {ciudad} = req.query
+        const buscarciudad = await Usuario.find({ 'direcciones.ciudad': ciudad })
+        if(buscarciudad.length === 0){
+            return res.status(404).json({ mensaje: 'No se encontraron usuarios en esa ciudad' });
+        }
+            res.status(200).json(buscarciudad);
+    }catch{
+        res.status(500).json({ mensaje: 'Error en la búsqueda', error: error.message });
+    }
+})
+
 
 
 //para que este escuchando el puerto
