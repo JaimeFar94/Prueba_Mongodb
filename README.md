@@ -12,6 +12,8 @@ MongoDB (instancia local)
 
 npm (administrador de paquetes de Node.js)
 
+postman o thunderclient para la ejecucion de los metodos http
+
 Configuración:
 
 Clona el repositorio con el comando :
